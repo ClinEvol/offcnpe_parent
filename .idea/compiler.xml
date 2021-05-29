@@ -7,13 +7,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="offcn_pe" />
         <module name="offcnpe_provider" />
         <module name="offcnpe_interface" />
+        <module name="offcnpe_util" />
         <module name="offcnpe_pojo" />
         <module name="offcnpe_controller" />
         <module name="offcnpe_mobile" />
-        <module name="offcnpe_util" />
+        <module name="offcn_pe" />
         <module name="offcnpe_job" />
       </profile>
     </annotationProcessing>
