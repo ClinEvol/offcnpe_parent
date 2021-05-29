@@ -1,0 +1,23 @@
+server:
+  port: 9004
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: offcnpe_mobile
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+  redis:
+    host: 10.10.33.69
+    port: 6379
+    password: 123456
+
+dubbo:
+  scan:
+    base-packages: com.ujiuye.controller
+  registry:
+    address: zookeeper://10.10.33.69:2181
+    timeout: 100000

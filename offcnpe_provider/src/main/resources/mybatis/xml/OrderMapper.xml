@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ujiuye.mapper.OrderMapper">
+    <select id="hotSetmeal" resultType="java.util.Map">
+        SELECT COUNT(o.id) setmeal_count, s.`name`,COUNT(o.id)/(SELECT COUNT(id) FROM t_order) proportion
+        FROM t_order o
+        INNER JOIN t_setmeal s
+        ON o.setmeal_id=s.id
+        GROUP BY s.`name`
+        ORDER BY COUNT(o.id) DESC
+        LIMIT 0,4
+    </select>
+</mapper>

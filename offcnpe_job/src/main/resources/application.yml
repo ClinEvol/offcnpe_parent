@@ -1,0 +1,12 @@
+server:
+  port: 9005
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: offcnpe_job
+  redis:
+    host: 10.10.33.101
+    port: 6379
+    password: 123456

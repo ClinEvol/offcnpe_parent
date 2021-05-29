@@ -1,0 +1,33 @@
+server:
+  port: 9002
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    url: jdbc:mysql:///offcnpe
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+  application:
+    name: offcnpe_provider
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-not-delete-value: 1
+      logic-delete-value: 0
+  mapper-locations: mybatis/xml/*.xml
+  type-aliases-package: com.ujiuye.pojo
+
+dubbo:
+  scan:
+    base-packages: com.ujiuye.service.impl
+  protocol:
+    port: 20880
+    name: dubbo
+  registry:
+    address: zookeeper://192.168.186.129:2181
+    timeout: 100000

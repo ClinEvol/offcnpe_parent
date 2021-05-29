@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ujiuye.mapper.SetmealMapper">
+    <select id="getCountSetmeal" resultType="java.util.Map">
+        SELECT t_setmeal.`name`,count(t_order.id) `value`
+        FROM t_order
+        INNER JOIN t_setmeal ON t_order.setmeal_id=t_setmeal.id
+        GROUP BY t_setmeal.`name`
+    </select>
+</mapper>

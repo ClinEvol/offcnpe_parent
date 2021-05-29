@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../plugins/echarts.js"></script>
+</head>
+<body>
+    <div id="main" style="width: 500px; height: 500px"></div>
+    <script>
+        //模拟后台传来的json
+        var jsondata =
+            '{"sales":[{"name":"衬衫","num":"70"},{"name":"羊毛衫","num":"27"},{"name":"裤子","num":"36"},{"name":"高跟鞋","num":"18"},{"name":"袜子","num":"85"},{"name":"棉袄","num":"105"}]}';
+        var jsonobj = JSON.parse(jsondata);
+
+        //获取json中的数值
+        var dataName = [];
+        var dataNum = [];
+        var temp = jsonobj;
+
+        //匿名函数解析json串中的数值，关键点
+        (function() {
+            for(var i = 0; i < temp.sales.length; i++) {
+                dataName.push(temp.sales[i].name);
+                dataNum.push(temp.sales[i].num);
+            }
+        })();
+        //饼状图
+        echarts.init(document.getElementById('main')).setOption({
+            title: {
+                text: '衣物销量统计',
+                subtext: '日销量（万）',
+                x: 'center',
+                //背景色
+                //backgroundColor:'rgba(12,121,123,0.1)'
+            },
+            tooltip: {},
+            series: [{
+                name: '详情',
+                type: 'pie',
+
+                //饼状图的大小
+                //radius : '55%',
+
+                center: ['50%', '60%'],
+                data: (function() { //饼状图需要函数解析数字内的值
+                    var res = [];
+                    var len = dataName.length;
+                    while(len--) {
+                        res.push({
+                            name: dataName[len],
+                            value: dataNum[len]
+                        });
+                    }
+                    return res;
+                })()
+            }]
+        })
+    </script>
+</body>
+</html>

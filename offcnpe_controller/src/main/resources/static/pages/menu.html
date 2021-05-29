@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>医疗管家</title>
+    <meta name="description" content="医疗管家">
+    <meta name="keywords" content="医疗管家">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <style>
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+        .text {
+            font-size: 14px;
+        }
+
+        .item {
+            margin-bottom: 18px;
+        }
+
+        .clearfix:before,
+        .clearfix:after {
+            display: table;
+            content: "";
+        }
+        .clearfix:after {
+            clear: both
+        }
+
+        .box-card {
+            width: 480px;
+        }
+    </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>系统管理<small>角色管理</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>系统管理</el-breadcrumb-item>
+            <el-breadcrumb-item>角色管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <el-row>
+                <el-col :span="12">
+                    <el-input
+                            placeholder="输入关键字进行过滤"
+                            v-model="filterText">
+                    </el-input>
+                    <br/>
+                    <el-tree
+                            class="filter-tree"
+                            :data="dataList"
+                            :props="defaultProps"
+                            default-expand-all
+                            :filter-node-method="filterNode"
+                            ref="tree">
+                        <span class="custom-tree-node" slot-scope="{ node, data }">
+
+                                <span><i :class="'fa '+node.icon"></i> {{ node.label }}</span>
+                                <span>
+                                  <el-button
+                                          type="text"
+                                          size="mini"
+                                          @click="() => edit(data)">
+                                    修改
+                                  </el-button>
+                                  <el-button
+                                          type="text"
+                                          size="mini"
+                                          @click="() => remove(node, data)">
+                                    删除
+                                  </el-button>
+                                </span>
+                              </span>
+                    </el-tree>
+
+
+
+                </el-col>
+                <el-col :offset="3" :span="9">
+                    <el-card>
+                        <div slot="header" class="clearfix">
+                            <span v-if="methodName=='save'">添加菜单</span>
+                            <span v-else>修改菜单</span>
+                        </div>
+                        <div class="text item">
+
+                    <el-form ref="dataEditForm"  :model="formData" :rules="rules" label-position="right" label-width="100px">
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="菜单名称:" prop="name">
+                                    <el-input v-model="formData.name"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="24">
+                                <el-form-item label="父菜单:">
+                                    <el-select v-model="formData.parentmenuid" placeholder="请选择">
+                                        <el-option key="作为项层菜单" label="作为项层菜单" value="">
+                                        </el-option>
+                                        <el-option
+                                                v-for="item in parentList"
+                                                :key="item.id"
+                                                :label="item.name"
+                                                :value="item.id">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="24">
+                                <el-form-item label="URL:">
+                                    <el-input v-model="formData.linkurl"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="24">
+                                <el-form-item label="path:">
+                                    <el-input v-model="formData.path"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="24">
+                                <el-form-item label="优先权:">
+                                    <el-input v-model="formData.priority"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="24">
+                                <el-form-item label="icon:">
+                                    <el-input v-model="formData.icon"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="说明:">
+                                    <el-input v-model="formData.description" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24" align="right">
+                                <el-button @click="resetForm()">取消</el-button>
+                                <el-button type="primary" @click="handleEdit()">确定</el-button>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            methodName: 'save',
+            filterText: '',
+            dataList: [],//列表数据
+            formData: {},//表单数据
+            rules: {//校验规则
+                name: [{ required: true, message: '菜单名称为必填项', trigger: 'blur' }],
+                keyword: [{ required: true, message: '关键字为必填项', trigger: 'blur' }]
+            },
+            defaultProps: {
+                children: 'children',
+                label: 'label',
+                icon: 'icon'
+            },
+            parentList: []
+        },
+        //加载页面即执行的函数
+        created() {
+            this.getMenu();
+            this.getParentList();
+        },
+        watch: {
+            filterText(val) {
+                this.$refs.tree.filter(val);
+            }
+        },
+        methods: {
+            getParentList(){
+                axios.get("http://localhost:9003/menu/parentlist").then(response=>{
+                    if(response.data.flag){
+                        this.parentList=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            },
+            getMenu(){
+                axios.get("http://localhost:9003/menu/listMenuTree").then(response=>{
+                    if(response.data.flag){
+                        this.dataList=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            },
+            filterNode(value, data) {
+                if (!value) return true;
+                return data.label.indexOf(value) !== -1;
+            },
+            edit(data) {
+                this.methodName='update';
+                axios.get("http://localhost:9003/menu/get/"+data.id).then(response=>{
+                    if(response.data.flag){
+                        this.formData=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            },
+            remove(node, data) {
+                let tips="此操作将永久删除该菜单, 是否继续?";
+                let type="提示";
+                if(node.level==1){
+                    tips="该菜单为一级菜单,该菜单下的所有子菜单会一并删除。删除后无法恢复,您确定要删除吗?";
+                    type="警告！！！";
+                }
+                this.$confirm(tips, type, {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get(`http://localhost:9003/menu/remove/${data.id}`).then(response=>{
+                        if(response.data.flag){
+                            this.$message({
+                                type: 'success',
+                                message: response.data.message
+                            });
+                            //刷新列表
+                            this.getMenu();
+                            this.getParentList();
+                        }else{
+                            this.$message({
+                                type: 'error',
+                                message: response.data.message
+                            });
+                        }
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            handleEdit(){
+                axios.post(`http://localhost:9003/menu/${this.methodName}`,this.formData)
+                .then(response=>{
+                    if(response.data.flag){
+                        this.$message({
+                            type: 'success',
+                            message: response.data.message
+                        });
+                        //刷新列表
+                        this.getMenu();
+                        this.getParentList();
+                        this.resetForm();
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            },
+            // 重置表单
+            resetForm() {
+                this.formData={};
+                this.methodName='save';
+            }
+        }
+    })
+</script>
+</html>

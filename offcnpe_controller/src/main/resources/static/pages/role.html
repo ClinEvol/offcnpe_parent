@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>医疗管家</title>
+    <meta name="description" content="医疗管家">
+    <meta name="keywords" content="医疗管家">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../js/qs.js"></script>
+    <style>
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>系统管理<small>角色管理</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>系统管理</el-breadcrumb-item>
+            <el-breadcrumb-item>角色管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <el-row>
+                <el-col :span="11">
+                    <div class="filter-container">
+                        <el-input placeholder="角色名称/关键字" v-model="pagination.queryString" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"></el-input>
+                        <el-button @click="findPage()" class="dalfBut">查询</el-button>
+                    </div>
+                    <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                        <el-table-column width="50" prop="id" align="center" label="id"></el-table-column>
+                        <el-table-column prop="name" label="角色名称" align="center"></el-table-column>
+                        <el-table-column prop="keyword" label="关键字" align="center"></el-table-column>
+                        <el-table-column label="操作" align="center">
+                            <template slot-scope="scope">
+                                <el-button type="primary" size="mini" @click="handleUpdate(scope.row.id)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                </el-col>
+                <el-col :offset="2" :span="11">
+                    <h4><span v-if="methodName=='save'">添加角色</span>
+                        <span v-else>修改角色</span></h4>
+                    <el-divider></el-divider>
+                    <el-form ref="dataEditForm"  :model="formData" :rules="rules" label-position="right" label-width="100px">
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="角色名称" prop="name">
+                                    <el-input v-model="formData.name"/>
+                                </el-form-item>
+                            </el-col>
+
+                            <el-col :span="24">
+                                <el-form-item label="关键字" prop="keyword">
+                                    <el-input v-model="formData.keyword"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="描述">
+                                    <el-input v-model="formData.description" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="权限">
+                                    <el-checkbox :indeterminate="isIndeterminatePermission" v-model="checkAllPermission" @change="handleCheckAllChangePermission">全选</el-checkbox>
+                                    <div style="margin: 15px 0;"></div>
+                                    <el-checkbox-group v-model="formData.permissionIds" @change="handleCheckedCitiesChangePermission">
+                                        <el-checkbox v-for="permission in permissions" :label="permission.id" :key="permission.id">{{permission.name}}</el-checkbox>
+                                    </el-checkbox-group>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="菜单选择:">
+                                    <el-tree
+                                            :data="menuList"
+                                            show-checkbox
+                                            node-key="id"
+                                            ref="tree"
+                                            default-expand-all
+                                            :default-checked-keys="defaultCheckedTree"
+                                            highlight-current
+                                            :props="defaultProps"
+                                            @check-change="handleCheckChange">
+                                    </el-tree>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24" align="right">
+                                <el-button @click="dialogFormVisible = false">取消</el-button>
+                                <el-button type="primary" @click="handleEdit()">确定</el-button>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            pagination: {//分页相关属性
+                currentPage: 1,
+                pageSize:10,
+                total:100,
+                queryString:null,
+            },
+            menuList:[],//菜单列表
+            dataList: [],//列表数据
+            formData: {
+                menuIds:[],
+                permissionIds:[]
+            },//表单数据
+            defaultCheckedTree:[],
+            checkAllPermission: false,
+            permissions: [],
+            isIndeterminatePermission: false,
+            methodName:'save',
+            rules: {//校验规则
+                code: [{ required: true, message: '项目编码为必填项', trigger: 'blur' }],
+                name: [{ required: true, message: '项目名称为必填项', trigger: 'blur' }]
+            },
+            defaultProps: {
+                children: 'children',
+                label: 'label'
+            },
+        },
+        //加载页面即执行的函数
+        created() {
+            this.findPage()
+        },
+        methods: {
+            handleCheckChange(data, checked, indeterminate) {
+                if(checked){
+                    this.formData.menuIds.push(data.id);
+                }else{
+                    this.formData.menuIds.pop(data.id);
+                }
+            },
+            //分页查询
+            findPage() {
+                //加载角色列表
+               axios.post("http://localhost:9003/role/list",this.pagination)
+                .then(response=>{
+                    this.dataList=response.data.data;
+                    this.loading=false;
+                });
+               //加载菜单列表
+                axios.get("http://localhost:9003/menu/listMenuTree").then(response=>{
+                    if(response.data.flag){
+                        this.menuList=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+                //加载权限列表
+                axios.get("http://localhost:9003/permission/listAll").then(response=>{
+                    if(response.data.flag){
+                        this.permissions=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            },
+            // 重置表单
+            resetForm() {
+                this.methodName='save';
+                this.formData={};
+                this.defaultCheckedTree=[];
+            },
+
+            handleCheckedCitiesChangePermission(value) {
+                let checkedCount = value.length;
+                this.checkAllPermission = checkedCount === this.permissions.length;
+                this.isIndeterminatePermission = checkedCount > 0 && checkedCount < this.permissions.length;
+            },
+            handleCheckAllChangePermission(val) {
+                let newList = [];
+                this.permissions.forEach(item =>{newList.push(item.id)});//遍历json中的id
+                this.formData.permissionIds = val ? newList : [];
+                this.isIndeterminatePermission = false;
+            },
+
+            // 删除
+            handleDelete(row) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get(`http://localhost:9003/role/remove/${row}`).then(response=>{
+                        if(response.data.flag){
+                            this.$message({
+                                type: 'success',
+                                message: response.data.message
+                            });
+                            //刷新列表
+                            this.findPage();
+                        }else{
+                            this.$message({
+                                type: 'error',
+                                message: response.data.message
+                            });
+                        }
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            handleEdit(){
+                axios.post(`http://localhost:9003/role/${this.methodName}`,this.formData).then(response=>{
+                    if(response.data.flag){
+                        this.$message({
+                            type: 'success',
+                            message: response.data.message
+                        });
+                        //刷新列表
+                        this.findPage();
+                        this.resetForm();
+                    }else{
+                        this.$message({
+                            type: 'error',
+                            message: response.data.message
+                        });
+                    }
+                });
+            },
+            handleUpdate(id){
+                this.methodName='update';
+                axios.get(`http://localhost:9003/role/get/${id}`).then(response=>{
+                    this.formData=response.data.data;
+                    this.defaultCheckedTree=response.data.data.menuIds;
+                });
+            }
+        }
+    })
+</script>
+</html>

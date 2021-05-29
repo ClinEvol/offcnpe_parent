@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>医疗管家</title>
+    <meta name="description" content="医疗管家">
+    <meta name="keywords" content="医疗管家">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <style>
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>系统管理<small>权限管理</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>系统管理</el-breadcrumb-item>
+            <el-breadcrumb-item>权限管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <el-row>
+                <el-col :span="12">
+                    <div class="filter-container">
+                        <el-input placeholder="名称/关键字" v-model="pagination.queryString" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"></el-input>
+                        <el-button @click="findPage()" class="dalfBut">查询</el-button>
+                        <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+                    </div>
+                    <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                        <el-table-column prop="id" align="center" label="id"></el-table-column>
+                        <el-table-column prop="name" label="权限名称" align="center"></el-table-column>
+                        <el-table-column prop="keyword" label="关键字" align="center"></el-table-column>
+                        <el-table-column label="操作" align="center">
+                            <template slot-scope="scope">
+                                <el-button type="primary" size="mini" @click="handleUpdate(scope.row.id)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <div class="pagination-container">
+                        <el-pagination
+                                class="pagiantion"
+                                @current-change="handleCurrentChange"
+                                :current-page="pagination.currentPage"
+                                :page-size="pagination.pageSize"
+                                layout="total, prev, pager, next, jumper"
+                                :total="pagination.total">
+                        </el-pagination>
+                    </div>
+
+                </el-col>
+                <el-col :offset="2" :span="10">
+                    <el-card>
+                        <div slot="header" class="clearfix">
+                            <span v-if="methodName=='save'">添加权限</span>
+                            <span v-else>修改权限</span>
+                        </div>
+                        <div class="text item">
+
+                            <el-form ref="dataEditForm"  :model="formData" :rules="rules" label-position="right" label-width="100px">
+                                <el-row>
+                                    <el-col :span="24">
+                                        <el-form-item label="权限名称:" prop="name">
+                                            <el-input v-model="formData.name"/>
+                                        </el-form-item>
+                                    </el-col>
+                                    <el-col :span="24">
+                                        <el-form-item label="关键字:">
+                                            <el-input v-model="formData.keyword"/>
+                                        </el-form-item>
+                                    </el-col>
+                                </el-row>
+
+                                <el-row>
+                                    <el-col :span="24">
+                                        <el-form-item label="说明:">
+                                            <el-input v-model="formData.description" type="textarea"></el-input>
+                                        </el-form-item>
+                                    </el-col>
+                                </el-row>
+
+                                <el-row>
+                                    <el-col :span="24" align="right">
+                                        <el-button @click="resetForm()">取消</el-button>
+                                        <el-button type="primary" @click="handleEdit()">确定</el-button>
+                                    </el-col>
+                                </el-row>
+                            </el-form>
+
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data:{
+            methodName:'save',
+            pagination: {//分页相关属性
+                currentPage: 1,
+                pageSize:10,
+                total:100,
+                queryString:null,
+            },
+            dataList: [],//列表数据
+            formData: {},//表单数据
+
+            rules: {//校验规则
+                keyword: [{ required: true, message: '关键字为必填项', trigger: 'blur' }],
+                name: [{ required: true, message: '名称为必填项', trigger: 'blur' }]
+            }
+        },
+        //加载页面即执行的函数
+        created() {
+            this.findPage()
+        },
+        methods: {
+
+            //分页查询
+            findPage() {
+                axios.post("http://localhost:9003/permission/listPage",this.pagination)
+                    .then(response=>{
+                        this.dataList=response.data.rows;
+                        this.pagination.total=response.data.total;
+                        this.loading=false;
+                    });
+            },
+            // 重置表单
+            resetForm() {
+                this.activeName="first";
+                this.checkitemIds=[];
+                this.formData={};
+            },
+            //切换页码
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage=currentPage;
+                this.findPage();
+            },
+            // 删除
+            handleDelete(id) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get(`http://localhost:9003/permission/remove/${id}`).then(response=>{
+                        if(response.data.flag){
+                            this.$message({
+                                type: 'success',
+                                message: response.data.message
+                            });
+                            //刷新列表
+                            this.findPage();
+                        }else{
+                            this.$message({
+                                type: 'error',
+                                message: response.data.message
+                            });
+                        }
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            handleEdit(){
+                axios.post(`http://localhost:9003/permission/${this.methodName}`,this.formData)
+                    .then(response=>{
+                        if(response.data.flag){
+                            this.$message({
+                                type: 'success',
+                                message: response.data.message
+                            });
+                            //刷新列表
+                            this.findPage();
+                            this.resetForm();
+                        }else{
+                            this.$message.error(response.data.message);
+                        }
+                    });
+            },
+            handleUpdate(id) {
+                this.methodName='update';
+                axios.get("http://localhost:9003/permission/get/"+id).then(response=>{
+                    if(response.data.flag){
+                        this.formData=response.data.data;
+                    }else{
+                        this.$message.error(response.data.message);
+                    }
+                });
+            }
+        }
+    })
+</script>
+</html>
